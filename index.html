@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSA verifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        textarea,
+        input,
+        button {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .center {
+            /* center */
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        button {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 14em;
+        }
+
+        pre {
+            border-style: dashed;
+            border-color: #818181;
+            border-width: 2px;
+            background: #f4f4f4;
+            padding: 10px;
+            white-space: pre-wrap;
+            /* Since CSS 2.1 */
+            white-space: -moz-pre-wrap;
+            /* Mozilla, since 1999 */
+            white-space: -pre-wrap;
+            /* Opera 4-6 */
+            white-space: -o-pre-wrap;
+            /* Opera 7 */
+            word-wrap: break-word;
+            /* Internet Explorer 5.5+ */
+        }
+
+        #verificationResult{
+            font-weight: bold;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1 class="center">RSA verifier</h1>
+    <button id="reset" class="center">Reset</button>
+    <textarea id="text2verify" rows="3" placeholder="Text to verify"></textarea>
+    <textarea id="signature" rows="3" placeholder="Signature"></textarea>
+    <textarea id="publicKey" rows="15" placeholder="Public key"></textarea>
+    <button id="verify" class="center">Verify</button>
+    <p id="verificationResult" class="center"></p>
+    <script>
+
+        async function verifySignature() {
+            try {
+                const text = document.getElementById("text2verify").value;
+                const signatureBase64 = document.getElementById("signature").value;
+                const publicKey = await window.crypto.subtle.importKey("jwk", JSON.parse(document.getElementById("publicKey").value), {
+                    name: "RSASSA-PKCS1-v1_5",
+                    hash: {
+                        name: "SHA-256"
+                    }
+                }, false, ["verify"]);
+                if (!signatureBase64) throw new Error("Firma vacía");
+                const signature = new Uint8Array(atob(signatureBase64).split("").map(c => c.charCodeAt(0)));
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+                const isValid = await window.crypto.subtle.verify("RSASSA-PKCS1-v1_5", publicKey, signature, data);
+                document.getElementById("verificationResult").textContent = isValid ? "Valid signature" : "Invalid signature";
+            } catch (error) {
+                document.getElementById("verificationResult").textContent = "Invalid signature";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            document.getElementById("reset").addEventListener("click", () => {                
+                document.getElementById("text2verify").value = "";
+                document.getElementById("signature").value = "";
+                document.getElementById("publicKey").value = "";
+                document.getElementById("verificationResult").textContent = "";
+                generateKeys();
+            });
+
+            document.getElementById("verify").addEventListener("click", () => {
+                verifySignature();
+            });
+
+        })
+
+    </script>
+</body>
+
+</html>
